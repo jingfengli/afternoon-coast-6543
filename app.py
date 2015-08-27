@@ -11,6 +11,7 @@ graphs you create with your friends though the link!
 
 You should know at least the basics of Flask to understand this example
 '''
+#%%
 import flask
 
 from bokeh.embed import components
