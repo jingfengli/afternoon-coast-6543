@@ -1,19 +1,15 @@
 '''
-This script is loosely based on the bokeh spectogram example,
-but is much simpler:
+This script is loosely based on the bokeh/examples/embed/simple/simple.py.
 
-    https://github.com/bokeh/bokeh/tree/master/examples/embed/spectrogram
-
-This creates a simple form for generating polynomials of the form y = x^2.
-
-This is done using a form that has a method of GET, allowing you to share the
-graphs you create with your friends though the link!
-
-You should know at least the basics of Flask to understand this example
 '''
 #%%
-import flask
+import numpy as np
+import requests as rq
+import simplejson as sjson
+import pandas as pd
 
+import flask
+from flask import request, session
 from bokeh.embed import components
 from bokeh.plotting import figure
 from bokeh.resources import INLINE
@@ -21,13 +17,9 @@ from bokeh.templates import RESOURCES
 from bokeh.util.string import encode_utf8
 
 app = flask.Flask(__name__)
+app.secret_key = '\x87\x1e2\x89\x0f|"\xf9\xbbh\xabj\xd1\xf8\xaf\xc0\x06\xcd\x9e\xdb\xe5\xc6\xaf\xac'
 
-colors = {
-    'Black': '#000000',
-    'Red':   '#FF0000',
-    'Green': '#00FF00',
-    'Blue':  '#0000FF',
-}
+colors = ['#FF0000','#00FF00','#0000FF']
 
 
 def getitem(obj, item, default):
@@ -36,23 +28,51 @@ def getitem(obj, item, default):
     else:
         return obj[item]
 
+@app.route("/",methods=["GET","POST"])
+def lookup():
+    if request.method == 'GET':
+        return flask.render_template('welcome.html')
+    elif request.method =='POST':
+        # a = flask.request.form.get('Volume')
 
-@app.route("/")
-def polynomial():
-    """ Very simple embedding of a polynomial chart"""
-    # Grab the inputs arguments from the URL
-    # This is automated by the button
-    args = flask.request.args
+        args = flask.request.form
+        Message = 'Most likely, the ticker you entered was not found in the dataset.'
 
-    # Get all the form arguments in the url with defaults
-    color = colors[getitem(args, 'color', 'Black')]
-    _from = int(getitem(args, '_from', 0))
-    to = int(getitem(args, 'to', 10))
+        if 'company' not in args.keys():
+            flask.flash(Message)
+            return flask.render_template('welcome.html')
+        else:
+            company = args['company']
 
-    # Create a polynomial line graph
-    x = list(range(_from, to + 1))
-    fig = figure(title="Polynomial")
-    fig.line(x, [i ** 2 for i in x], color=color, line_width=2)
+        session['company'] = args
+        return flask.redirect('result')
+
+@app.route('/result')
+def result():
+    args = session.pop('company', None)
+    r = rq.get('https://www.quandl.com/api/v1/datasets/WIKI/' + args['company'] + '.json')
+    if not r.status_code == 200:
+        flask.flash(Message)
+        return flask.render_template('welcome.html')
+
+    company = args['company']
+    data = r.json()
+    price = pd.DataFrame(data['data'])
+    price.columns = data['column_names']
+
+    TOOLS = "pan,wheel_zoom,box_zoom,reset,save"
+
+    r = figure(x_axis_type = "datetime", x_axis_label = "Time", tools=TOOLS)
+
+    tim = [np.datetime64(i) for i in price['Date']]
+
+    datatype = ['Close','Adj. Volume','Volume']
+    for i in xrange(3):
+        if datatype[i] in args.keys():
+            r.line(tim, price[datatype[i]], color=colors[i], legend=company+' : '+datatype[i])
+
+    r.title = "Stock data from Quandl WIKI set"
+    r.grid.grid_line_alpha=0.3
 
     # Configure resources to include BokehJS inline in the document.
     # For more details see:
@@ -63,16 +83,20 @@ def polynomial():
         js_files=INLINE.js_files,
         css_files=INLINE.css_files,
     )
-
+    print company
     # For more details see:
     #   http://bokeh.pydata.org/en/latest/docs/user_guide/embedding.html#components
-    script, div = components(fig, INLINE)
+    script, div = components(r, INLINE)
     html = flask.render_template(
-        'embed.html',
+        'result.html',
         plot_script=script, plot_div=div, plot_resources=plot_resources,
-        color=color, _from=_from, to=to
+        company=company
     )
     return encode_utf8(html)
+
+
+app.add_url_rule('/', 'index', lookup)
+app.add_url_rule('/result', 'result', result)
 
 
 def main():
