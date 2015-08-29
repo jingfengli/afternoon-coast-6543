@@ -3,6 +3,7 @@
 <html>
   <head>
       <meta charset = 'utf-8'>
+      <link rel="SHORTCUT ICON" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
       <title> Milestone Project </title>
       <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}" />
       <style type="text/css"> </style>
@@ -15,9 +16,9 @@
             <p>Ticker Symbol: <input type='text' name='company'/> </p>
 
             <p>
-              Closing Price <input type='checkbox' name='Close' value='Close' /> <br>
-              Adjusged Closing Volume <input type='checkbox' name='Adj. Volume' value='Adj. Volume' /> <br>
-              Volume <input type='checkbox' name='Volume' value='Volume' /> </p>
+              Closing Price <input type='checkbox' name='Close' value='Close' /><br>
+              Adjusged Closing Volume <input type='checkbox' name='Adj. Volume' value='Adj. Volume' /><br>
+              Volume <input type='checkbox' name='Volume' value='Volume' /></p>
             <button type='submit'><h2>Submit</h2></button>
         </form>
         {% with messages = get_flashed_messages() %}

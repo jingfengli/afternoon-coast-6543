@@ -28,6 +28,8 @@ def getitem(obj, item, default):
     else:
         return obj[item]
 
+Message = 'Most likely, the ticker you entered was not found in the dataset.'
+
 @app.route("/",methods=["GET","POST"])
 def lookup():
     if request.method == 'GET':
@@ -36,11 +38,11 @@ def lookup():
         # a = flask.request.form.get('Volume')
 
         args = flask.request.form
-        Message = 'Most likely, the ticker you entered was not found in the dataset.'
 
-        if 'company' not in args.keys():
+        if not args['company']:
             flask.flash(Message)
-            return flask.render_template('welcome.html')
+            return flask.redirect(flask.url_for('index'))
+            # return flask.render_template('welcome.html')
         else:
             company = args['company']
 
@@ -49,11 +51,13 @@ def lookup():
 
 @app.route('/result')
 def result():
-    args = session.pop('company', None)
+    args = session['company']
     r = rq.get('https://www.quandl.com/api/v1/datasets/WIKI/' + args['company'] + '.json')
+
     if not r.status_code == 200:
         flask.flash(Message)
-        return flask.render_template('welcome.html')
+        return flask.redirect(flask.url_for('index'))
+        # return flask.render_template('welcome.html')
 
     company = args['company']
     data = r.json()
@@ -83,7 +87,7 @@ def result():
         js_files=INLINE.js_files,
         css_files=INLINE.css_files,
     )
-    print company
+
     # For more details see:
     #   http://bokeh.pydata.org/en/latest/docs/user_guide/embedding.html#components
     script, div = components(r, INLINE)
