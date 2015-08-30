@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Hello, World!</title>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+	</head>
+	<body>
+		<div>
+  			<h1>Hello, World!</h1>
+		</div>
+		<div class='checkbox' method='GET'>
+		<label>
+			<input type='checkbox' name ='check' value ='edit'>
+			<button type="submit">Submit</button>
+			{% with messages = get_flashed_messages() %}
+            {% if messages %}
+                Results:
+                <pre>
+                    {% for message in messages %}
+{{ message }}
+                    {% endfor %}
+								</pre>
+						{% endif %}
+			{% endwith %}
+		</label>
+		</div>
+	</body>
+</html>
