@@ -104,7 +104,7 @@ app.add_url_rule('/result', 'result', result)
 
 
 def main():
-    app.debug = True
+    # app.debug = True
     app.run()
 
 if __name__ == "__main__":
